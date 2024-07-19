@@ -19,25 +19,23 @@ connectDB();
 // Endpoint to handle tap data
 
 app.post('/tap', async (req, res) => {
+  try {
+    const db = await connectDB();
+    const collection = db.collection('taps');
     const { chatId, username } = req.body;
-  
-    try {
-      const db = await connectToDatabase();
-      const collection = db.collection('taps');
-  
-      // Insert or update the tap count
-      await collection.updateOne(
-        { chatId: chatId },
-        { $inc: { taps: 1 }, $set: { username: username } }, // Store the username
-        { upsert: true }
-      );
-  
-      res.json({ status: 'success' });
-    } catch (error) {
-      console.error('Error handling tap:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
-  });
+
+    const result = await collection.updateOne(
+      { chatId },
+      { $inc: { taps: 1 }, $set: { username } },
+      { upsert: true }
+    );
+
+    res.json({ success: true, taps: result.upsertedCount ? 1 : result.modifiedCount });
+  } catch (error) {
+    console.error('Error in /tap route:', error); // Log the error for debugging
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
   
   app.get('/taps/:chatId', async (req, res) => {
     const { chatId } = req.params;
